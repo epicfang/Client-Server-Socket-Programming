@@ -1,0 +1,1059 @@
+﻿Yaseen Hassan – Week 12 Lab 2
+
+
+Note: I believe I have completed most or all of Week 12 Lab 2.
+
+
+For Week12 Lab1 - timeServer & timeClient with timer (3 hours).
+Create a folder (week12Lab2) to place all your lab work here.
+Part1. 0% - You have done this in Lab1 to be continued.
+Program Listing:
+{cslinux1:~/week12Lab02} cat Server0.c
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <errno.h>
+#include <string.h>
+#include <sys/types.h>
+#include <time.h>
+
+
+int main(int argc, char *argv[])
+{
+    int listenfd = 0, connfd = 0;
+    struct sockaddr_in serv_addr;
+
+
+    char sendBuff[1025];
+    time_t ticks;
+
+
+    listenfd = socket(AF_INET, SOCK_STREAM, 0);
+    memset(&serv_addr, '0', sizeof(serv_addr));
+    memset(sendBuff, '0', sizeof(sendBuff));
+
+
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    serv_addr.sin_port = htons(23456);//change port mumber to 23456
+
+
+    bind(listenfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
+
+
+    listen(listenfd, 10);
+
+
+    while(1)
+    {
+        connfd = accept(listenfd, (struct sockaddr*)NULL, NULL);
+
+
+        ticks = time(NULL);
+        snprintf(sendBuff, sizeof(sendBuff), "%.24s\r\n", ctime(&ticks));
+        write(connfd, sendBuff, strlen(sendBuff));
+
+
+        close(connfd);
+        sleep(1);
+     }
+}
+{cslinux1:~/week12Lab02} cat Client0.c
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <errno.h>
+#include <arpa/inet.h>
+
+
+int main(int argc, char *argv[])
+{
+    char ip[] = "127.0.0.1";  // default IP of the server
+    int port = 23456;         // default port# of the server
+
+
+    int sockfd = 0, n = 0;
+    char recvBuff[1024];
+    struct sockaddr_in serv_addr;
+
+
+
+
+    memset(recvBuff, '0',sizeof(recvBuff));
+    if((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+    {
+        printf("\n Error : Could not create socket \n");
+        return 1;
+    }
+
+
+    memset(&serv_addr, '0', sizeof(serv_addr));
+
+
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(port);
+    argv[1] = ip;
+
+
+    system(" date; hostname; whoami ");
+    system(" netstat -aont | grep \" `hostname -i`:23456 \" ");
+
+
+    printf("\n timeClient: connecting to 127.0.0.1 Port#=23456 \n");
+
+
+
+
+    if(inet_pton(AF_INET, argv[1], &serv_addr.sin_addr)<=0)
+    {
+        printf("\n inet_pton error occured\n");
+        return 1;
+    }
+
+
+    if( connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
+    {
+       printf("\n Error : Connect Failed \n");
+       return 1;
+    }
+
+
+    printf("\n timeClient: connected to timeServer. \n");
+    system("ps");
+    system(" netstat -aont | grep \":23456 \" ");
+    printf("\n\n");
+
+
+    while ( (n = read(sockfd, recvBuff, sizeof(recvBuff)-1)) > 0)
+    {
+        recvBuff[n] = 0;
+        if(fputs(recvBuff, stdout) == EOF)
+        {
+            printf("\n Error : Fputs error\n");
+        }
+    }
+
+
+    if(n < 0)
+    {
+        printf("\n Read error \n");
+           exit(0);
+    }
+
+
+    printf("\n timeClient: now terminated. \n");
+    return 0;
+}
+1. Compile and run the programs (Server0.c and Client0.c)
+    Note that IP & port# of the server is hardcoded in these sample programs.
+    ./Server0 &
+    ./Client0
+Use ps command to make sure that you have only one server running at any time.
+{cslinux1:~} ls -l
+total 928
+drwx--x--x 3 yfh200000 sn   87 Sep 28 20:35 apue
+-rw------- 1 yfh200000 sn   58 Sep  5 12:08 days
+-r--r--r-- 1 yfh200000 sn    0 Sep  6 16:30 dog
+-rwx--x--x 1 yfh200000 sn 8408 Sep  9 11:01 hello
+-rw------- 1 yfh200000 sn  150 Sep  9 11:00 hello.c
+-rw------- 1 yfh200000 sn  242 Sep  7 12:45 Makefile
+drwxr-xr-x 2 yfh200000 sn    0 Aug 28 16:06 perl5
+-rw------- 1 yfh200000 sn    0 Aug 29 11:20 ping2.txt
+-rw------- 1 yfh200000 sn   26 Aug 29 11:26 ping3.txt
+-rw------- 1 yfh200000 sn   46 Aug 29 11:21 ping.txt
+drwx--x--x 2 yfh200000 sn    0 Dec  2  2022 public_html
+-rw------- 1 yfh200000 sn   35 Sep  5 12:01 renamed_file
+drwx--x--x 2 yfh200000 sn    0 Sep 11 16:49 Week04Labs
+drwx--x--x 2 yfh200000 sn  210 Sep 21 23:53 week05Lab1
+drwx--x--x 2 yfh200000 sn  195 Sep 22 20:31 week05Lab2
+drwx--x--x 2 yfh200000 sn   54 Oct 10 12:24 week07Lab1
+drwx--x--x 2 yfh200000 sn  140 Oct  6 18:29 week07Lab2
+drwx--x--x 2 yfh200000 sn  135 Oct 17 12:47 week08Lab02
+drwx--x--x 2 yfh200000 sn   52 Oct 17 12:43 week08Lab1
+drwx--x--x 2 yfh200000 sn   56 Oct 20 23:07 week09Lab1
+drwx--x--x 2 yfh200000 sn   52 Oct 20 23:36 week09Lab2
+drwx--x--x 2 yfh200000 sn  192 Oct 26 12:00 week10Lab1
+drwx--x--x 2 yfh200000 sn  248 Nov  3 13:29 week10Lab2
+drwx--x--x 2 yfh200000 sn    0 Oct 31 12:16 week11Lab1
+drwx--x--x 2 yfh200000 sn  104 Nov 10 12:41 week12Lab01
+drwx--x--x 2 yfh200000 sn  416 Nov 10 17:37 week12Lab02
+{cslinux1:~} cd week12Lab02
+{cslinux1:~/week12Lab02} ps
+  PID TTY          TIME CMD
+12134 pts/62   00:00:00 bash
+13330 pts/62   00:00:00 ps
+{cslinux1:~/week12Lab02} vim Server0.c
+{cslinux1:~/week12Lab02} vim Client0.c
+{cslinux1:~/week12Lab02} gcc -o Server0 Server0.c
+{cslinux1:~/week12Lab02} gcc -o Client0 Client0.c
+{cslinux1:~/week12Lab02} ./Server0 & ./Client0
+[1] 13656
+Fri Nov 10 18:14:32 CST 2023
+cslinux1.utdallas.edu
+yfh200000
+
+
+ timeClient: connecting to 127.0.0.1 Port#=23456
+
+
+ timeClient: connected to timeServer.
+  PID TTY          TIME CMD
+12134 pts/62   00:00:00 bash
+13656 pts/62   00:00:00 Server0
+13657 pts/62   00:00:00 Client0
+13667 pts/62   00:00:00 ps
+tcp        0      0 0.0.0.0:23456           0.0.0.0:*               LISTEN      off (0.00/0/0)
+tcp       27      0 127.0.0.1:42912         127.0.0.1:23456         CLOSE_WAIT  off (0.00/0/0)
+tcp        0      0 127.0.0.1:23456         127.0.0.1:42912         FIN_WAIT2   timewait (59.97/0/0)
+tcp        0      0 127.0.0.1:23456         127.0.0.1:42880         TIME_WAIT   timewait (5.90/0/0)
+
+
+
+
+Fri Nov 10 18:14:32 2023
+
+
+ timeClient: now terminated.
+{cslinux1:~/week12Lab02} ps
+  PID TTY          TIME CMD
+12134 pts/62   00:00:00 bash
+13656 pts/62   00:00:00 Server0
+13707 pts/62   00:00:00 ps
+{cslinux1:~/week12Lab02} kill 13656
+  
+2. Copy and update the programs (Server1.c and Client1.c)
+{cslinux1:~/week12Lab02} cp Server0.c Server1.c
+{cslinux1:~/week12Lab02} cp Client0.c Client1.c
+    Find one port# assigned to your netid (see the attached document of netid-port# range). 
+    Change the port# of the server listening to be one port# assigned to your netid.
+Program Listing:
+{cslinux1:~/week12Lab02} cat Server1.c
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <errno.h>
+#include <string.h>
+#include <sys/types.h>
+#include <time.h>
+
+
+int main(int argc, char *argv[])
+{
+    int listenfd = 0, connfd = 0;
+    struct sockaddr_in serv_addr;
+
+
+    char sendBuff[1025];
+    time_t ticks;
+
+
+    listenfd = socket(AF_INET, SOCK_STREAM, 0);
+    memset(&serv_addr, '0', sizeof(serv_addr));
+    memset(sendBuff, '0', sizeof(sendBuff));
+
+
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    serv_addr.sin_port = htons(36510);//change port mumber to match my id
+
+
+    bind(listenfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
+
+
+    listen(listenfd, 10);
+
+
+    while(1)
+    {
+        connfd = accept(listenfd, (struct sockaddr*)NULL, NULL);
+
+
+        ticks = time(NULL);
+        snprintf(sendBuff, sizeof(sendBuff), "%.24s\r\n", ctime(&ticks));
+        write(connfd, sendBuff, strlen(sendBuff));
+
+
+        close(connfd);
+        sleep(1);
+     }
+}
+{cslinux1:~/week12Lab02} cat Client1.c
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <errno.h>
+#include <arpa/inet.h>
+
+
+int main(int argc, char *argv[])
+{
+    char ip[] = "127.0.0.1";  // default IP of the server
+    int port = 36510;  // change port# to mathc my Net ID
+
+
+    int sockfd = 0, n = 0;
+    char recvBuff[1024];
+    struct sockaddr_in serv_addr;
+
+
+
+
+    memset(recvBuff, '0',sizeof(recvBuff));
+    if((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+    {
+        printf("\n Error : Could not create socket \n");
+        return 1;
+    }
+
+
+    memset(&serv_addr, '0', sizeof(serv_addr));
+
+
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(port);
+    argv[1] = ip;
+
+
+    system(" date; hostname; whoami ");
+    system(" netstat -aont | grep \" `hostname -i`:23456 \" ");
+
+
+    printf("\n timeClient: connecting to 127.0.0.1 Port#=36510 \n");
+
+
+
+
+    if(inet_pton(AF_INET, argv[1], &serv_addr.sin_addr)<=0)
+    {
+        printf("\n inet_pton error occured\n");
+        return 1;
+    }
+
+
+    if( connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
+    {
+       printf("\n Error : Connect Failed \n");
+       return 1;
+    }
+
+
+    printf("\n timeClient: connected to timeServer. \n");
+    system("ps");
+    system(" netstat -aont | grep \":23456 \" ");
+    printf("\n\n");
+
+
+    while ( (n = read(sockfd, recvBuff, sizeof(recvBuff)-1)) > 0)
+    {
+        recvBuff[n] = 0;
+        if(fputs(recvBuff, stdout) == EOF)
+        {
+            printf("\n Error : Fputs error\n");
+        }
+    }
+
+
+    if(n < 0)
+    {
+        printf("\n Read error \n");
+           exit(0);
+    }
+
+
+    printf("\n timeClient: now terminated. \n");
+    return 0;
+}
+
+
+    ./Server1 &
+    ./Client1
+    Use ps command to make sure that you have only one server running at any time.   
+{cslinux1:~/week12Lab02} ps
+  PID TTY          TIME CMD
+12134 pts/62   00:00:00 bash
+13926 pts/62   00:00:00 ps
+{cslinux1:~/week12Lab02} vim Server1.c
+{cslinux1:~/week12Lab02} vim Client1.c
+{cslinux1:~/week12Lab02} gcc -o Server1 Server1.c
+{cslinux1:~/week12Lab02} gcc -o Client1 Client1.c
+{cslinux1:~/week12Lab02} ./Server1 & ./Client1
+[1] 14236
+Fri Nov 10 18:16:57 CST 2023
+cslinux1.utdallas.edu
+yfh200000
+
+
+ timeClient: connecting to 127.0.0.1 Port#=36510
+
+
+ timeClient: connected to timeServer.
+  PID TTY          TIME CMD
+12134 pts/62   00:00:00 bash
+14236 pts/62   00:00:00 Server1
+14237 pts/62   00:00:00 Client1
+14247 pts/62   00:00:00 ps
+tcp        0      0 0.0.0.0:23456           0.0.0.0:*               LISTEN      off (0.00/0/0)
+tcp        0      0 127.0.0.1:23456         127.0.0.1:43096         TIME_WAIT   timewait (11.30/0/0)
+
+
+
+
+Fri Nov 10 18:16:57 2023
+
+
+ timeClient: now terminated.
+{cslinux1:~/week12Lab02} ps
+  PID TTY          TIME CMD
+12134 pts/62   00:00:00 bash
+14236 pts/62   00:00:00 Server1
+14267 pts/62   00:00:00 ps
+{cslinux1:~/week12Lab02} kill 14236
+
+
+Part2. (30%)
+1. Update two programs (Server2.c and Client2.c).
+{cslinux1:~/week12Lab02} cp Server1.c Server2.c
+{cslinux1:~/week12Lab02} cp Client1.c Client2.c
+    Note. The Port# of the server listening is hardcoded in the sample program.
+    Find one port# assigned to your netid (see the attached document of netid-port# range). 
+     (a) update the server to get the port# (to get it via the first argument) when the program is started.
+Program Listing:
+{cslinux1:~/week12Lab02} cat Server2.c
+
+
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <errno.h>
+#include <string.h>
+#include <sys/types.h>
+#include <time.h>
+
+
+int main(int argc, char *argv[])
+{
+    int portNumber = atoi(argv[1]);//add the port number as an integer argument
+    int listenfd = 0, connfd = 0;
+    struct sockaddr_in serv_addr;
+
+
+    char sendBuff[1025];
+    time_t ticks;
+
+
+    listenfd = socket(AF_INET, SOCK_STREAM, 0);
+    memset(&serv_addr, '0', sizeof(serv_addr));
+    memset(sendBuff, '0', sizeof(sendBuff));
+
+
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    serv_addr.sin_port = htons(portNumber);//takes port number as an argument
+
+
+    bind(listenfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
+
+
+    listen(listenfd, 10);
+
+
+    while(1)
+    {
+        connfd = accept(listenfd, (struct sockaddr*)NULL, NULL);
+
+
+        ticks = time(NULL);
+        snprintf(sendBuff, sizeof(sendBuff), "%.24s\r\n", ctime(&ticks));
+        write(connfd, sendBuff, strlen(sendBuff));
+
+
+        close(connfd);
+        sleep(1);
+     }
+}
+
+
+     (b) update the client to get the IP# and port# (of the server listening) from the two arguments
+     State clearly (in your document with the list of the code segments updated).
+
+
+
+
+Program Listing:
+{cslinux1:~/week12Lab02} cat Client2.c
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <errno.h>
+#include <string.h>     // Include string.h for strcpy and memset
+#include <arpa/inet.h>
+#include <netinet/in.h> // Include netinet/in.h for struct sockaddr_in
+#include <sys/types.h>  // Include sys/types.h for socket programming
+
+
+int main(int argc, char *argv[]) {
+    char ip[12];  // characters for argument
+    strcpy(ip, argv[1]); //takes the argument data type into a character array
+    int portNumber = atoi(argv[2]); //the default port of the server
+
+
+    int sockfd = 0, n = 0;
+    char recvBuff[1024];
+    struct sockaddr_in serv_addr;
+
+
+    memset(recvBuff, '0', sizeof(recvBuff));
+    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        perror("\nError: Could not create socket\n");
+        return 1;
+    }
+
+
+    memset(&serv_addr, '0', sizeof(serv_addr));
+
+
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(portNumber);
+    char call[512];
+
+
+    // Use sprintf correctly by providing a buffer as the first argument
+    sprintf(call, "netstat -aont | grep \" `hostname -i`:%i \"", portNumber);
+    system("date; hostname; whoami");
+    system(call);
+
+
+    printf("\ntimeClient: connecting to %s Port#= %i\n", ip, portNumber);
+
+
+    if (inet_pton(AF_INET, ip, &serv_addr.sin_addr) <= 0) {
+        perror("\ninet_pton error occurred\n");
+        return 1;
+    }
+
+
+    if (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
+        perror("\nError: Connect Failed\n");
+        return 1;
+    }
+
+
+    printf("\ntimeClient: connected to timeServer.\n");
+
+
+    // Use sprintf to format the command and concatenate into a single string
+    sprintf(call, "netstat -aont | grep \":%i \"", portNumber);
+    system(call);
+    printf("\n\n");
+
+
+    while ((n = read(sockfd, recvBuff, sizeof(recvBuff) - 1)) > 0) {
+        recvBuff[n] = 0;
+        if (fputs(recvBuff, stdout) == EOF) {
+            perror("\nError: Fputs error\n");
+        }
+    }
+
+
+    if (n < 0) {
+        perror("\nRead error\n");
+        exit(1);
+    }
+
+
+    printf("\ntimeClient: now terminated.\n");
+    return 0;
+}
+2. Compile and run the sample programs (timeServer1 and timeClient1) and run them.
+       ./Server2 port &      (where port is the port# of the server)  
+       ./Client2  ip port      (where ip is the ip address and port is the port# of the server)
+{cslinux1:~/week12Lab02} vim Server2.c
+{cslinux1:~/week12Lab02} vim Client2.c
+{cslinux1:~/week12Lab02} gcc -o Server2 Server2.c
+{cslinux1:~/week12Lab02} gcc -o Client2 Client2.c
+{cslinux1:~/week12Lab02} hostname -i
+10.176.92.15
+{cslinux1:~/week12Lab02} ./Server2 36510 & ./Client2 10.176.92.15 36510
+[1] 16045
+Fri Nov 10 18:21:46 CST 2023
+cslinux1.utdallas.edu
+yfh200000
+
+
+timeClient: connecting to 10.176.92.15 Port#= 36510
+
+
+timeClient: connected to timeServer.
+tcp        0      0 0.0.0.0:36510           0.0.0.0:*               LISTEN      off (0.00/0/0)
+tcp        0      1 10.176.92.15:36510      10.176.92.15:37874      FIN_WAIT1   on (0.19/0/0)
+tcp       27      0 10.176.92.15:37874      10.176.92.15:36510      CLOSE_WAIT  off (0.00/0/0)
+
+
+
+
+Fri Nov 10 18:21:46 2023
+
+
+timeClient: now terminated.
+Part3. (70%)
+Copy and update the programs: Server3.c and Client3.c to do the following tasks:
+{cslinux1:~/week12Lab02} cp Server2.c Server3.c
+{cslinux1:~/week12Lab02} cp Client2.c Client3.c
+
+
+1. the server is to do:
+        To get 2 arguments when it runs (for example, ./Server3 port time &)
+        (a) The first argument (port) is the port# (assigned to your netid)
+        (b) The second argument (time) is the time-duration (in second) to set alarm. 
+              If there is no activity during this time-duration, then the server will be terminated.
+              If there is a client connected, then the server resets the alarm and serves the client 
+        (c) When a client is connected, the server will call system("netstat ... ") to run netstat command 
+              to show the pair of IP/Port# of the server and IP/Port# of the client
+                   to check taht the server and the client are connected.
+              Do this before the server is sending the date to the client.
+2. the client is to do:
+        To get two arguments when it runs, for example: ./Client3  ip  port 
+        (a) The first argument is IP (IPv4) of the server is running.
+                   You can find the IP address of the host by: hostname -i
+                   Do not use local address (or -50% of lab score): 127.0.0.1
+        (b) The second argument is the port# of the server listening.
+3. the server and the client will check whether the arguments for the run are provided or not.
+        If so, it will print the arguments with a proper heading
+             else, it will print an error message to ask for the two arguments to run the program. 
+4. To have the message(s) in the beginning and at the end in the programs:
+       (a) For the server in the beginning 
+             print a message: ** the server uses port# [port] to listen with [time] for alarm ** 
+             print a message: ** the server will be terminated after [time] seconds of inactivity
+             system("date; hostname; whoami; ps ; ls -l ");  
+       (b) For the client in the beginning, provide the similar messages (similar to the server) with
+             print a message: ** the client is to connect to the server of IP# ip and Port# port ** 
+                      where IP# and Port# are two arguments 
+             print a message: ** the client will be terminated 
+             system("date; hostname; whoami; ps ; ls -l ");  
+       (c) At the end of the run of the server and of the client:
+            print a mesage: ** the server ends ** or  ** the client ends **
+            system("date; hostname; whoami; ps ; ls -l "); 
+Program Listing:(Server3)
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <errno.h>
+#include <string.h>
+#include <sys/types.h>
+#include <time.h>
+#include <signal.h>
+
+
+int alarm_duration; // Global variable to store the alarm duration
+
+
+// Signal handler for the alarm signal
+void alarm_handler(int signum) {
+    fprintf(stderr, "** The server will be terminated after %d seconds of inactivity **\n", alarm_duration);
+    exit(0);
+}
+
+
+int main(int argc, char *argv[]) {
+    // Check if the correct number of command-line arguments is provided
+    if (argc != 3) {
+        fprintf(stderr, "Error: Please provide port number and time duration as arguments.\n");
+        return 1;
+    }
+
+
+    // Extract port number and alarm duration from command-line arguments
+    int portNumber = atoi(argv[1]);
+    alarm_duration = atoi(argv[2]);
+
+
+    // Register the alarm handler function for the SIGALRM signal
+    signal(SIGALRM, alarm_handler);
+    // Set an initial alarm for the specified duration
+    alarm(alarm_duration);
+
+
+    int listenfd = 0, connfd = 0;
+    struct sockaddr_in serv_addr;
+
+
+    char sendBuff[1025];
+    time_t ticks;
+
+
+    // Print informational messages about server configuration
+    fprintf(stderr, "** The server uses port# %d to listen with %d seconds for alarm **\n", portNumber, alarm_duration);
+    fprintf(stderr, "** The server will be terminated after %d seconds of inactivity **\n", alarm_duration);
+    // Execute system commands to display additional information
+    system("date; hostname; whoami; ps; ls -l");
+
+
+    // Create a socket for listening
+    listenfd = socket(AF_INET, SOCK_STREAM, 0);
+    memset(&serv_addr, '0', sizeof(serv_addr));
+    memset(sendBuff, '0', sizeof(sendBuff));
+
+
+    // Configure server address structure
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    serv_addr.sin_port = htons(portNumber);
+
+
+    // Bind the socket to the specified port
+    bind(listenfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
+
+
+    // Start listening for incoming connections
+    listen(listenfd, 10);
+
+
+    // Main server loop to handle connections
+    while (1) {
+        // Accept a connection from a client
+        connfd = accept(listenfd, (struct sockaddr*)NULL, NULL);
+        // Reset the alarm for inactivity
+        alarm(alarm_duration);
+
+
+        // Get the current time
+        ticks = time(NULL);
+        // Format the time as a string and write to the client
+        snprintf(sendBuff, sizeof(sendBuff), "%.24s\r\n", ctime(&ticks));
+        write(connfd, sendBuff, strlen(sendBuff));
+
+
+        // Close the connection and introduce a short delay
+        close(connfd);
+        sleep(1);
+    }
+
+
+    // The server should never reach this point as it runs indefinitely
+    return 0;
+}
+Program Listing:(Client3)
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <errno.h>
+#include <string.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <sys/types.h>
+
+
+int main(int argc, char *argv[]) {
+    // Check if the correct number of command-line arguments is provided
+    if (argc != 3) {
+        fprintf(stderr, "Error: Please provide IP address and port number as arguments.\n");
+        return 1;
+    }
+
+
+    char ip[12];  // characters for argument
+    strcpy(ip, argv[1]); // takes the argument data type into a character array
+    int portNumber = atoi(argv[2]); // the default port of the server
+
+
+    int sockfd = 0, n = 0;
+    char recvBuff[1024];
+    struct sockaddr_in serv_addr;
+
+
+    // Initialize the receive buffer
+    memset(recvBuff, '0', sizeof(recvBuff));
+
+
+    // Create a socket for communication
+    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        perror("\nError: Could not create socket\n");
+        return 1;
+    }
+
+
+    // Initialize the server address structure
+    memset(&serv_addr, '0', sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(portNumber);
+
+
+    // Print information about the client connecting to the server
+    fprintf(stderr, "** The client is to connect to the server of IP# %s and Port# %i **\n", ip, portNumber);
+    system("date; hostname; whoami; ps; ls -l");
+
+
+    // Convert the IP address to binary form and set it in the server address structure
+    if (inet_pton(AF_INET, ip, &serv_addr.sin_addr) <= 0) {
+        perror("\ninet_pton error occurred\n");
+        return 1;
+    }
+
+
+    // Connect to the server
+    if (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
+        perror("\nError: Connect Failed\n");
+        return 1;
+    }
+
+
+    // Print a message indicating that the client will be terminated
+    fprintf(stderr, "** The client will be terminated **\n");
+
+
+    // Receive data from the server and print it to stdout
+    while ((n = read(sockfd, recvBuff, sizeof(recvBuff) - 1)) > 0) {
+        recvBuff[n] = 0;
+        if (fputs(recvBuff, stdout) == EOF) {
+            perror("\nError: Fputs error\n");
+        }
+    }
+
+
+    // Check for read errors
+    if (n < 0) {
+        perror("\nRead error\n");
+        exit(1);
+    }
+
+
+    // Print a message indicating that the client has ended
+    fprintf(stderr, "** The client ends **\n");
+    // Display additional information
+    system("date; hostname; whoami; ps; ls -l");
+    return 0;
+}
+5. To compile and run the programs
+    Before running the server, make sure that there is no server running (or kill it).
+    After the server is running, use ps command to show it running
+        and use netstat command to check whether the port# of the server listening
+
+
+{cslinux1:~/week12Lab02} vim Server3.c
+{cslinux1:~/week12Lab02} vim Client3.c
+{cslinux1:~/week12Lab02} ps
+  PID TTY          TIME CMD
+12134 pts/62   00:00:00 bash
+16045 pts/62   00:00:00 Server2
+17090 pts/62   00:00:00 ps
+{cslinux1:~/week12Lab02} kill 16045
+{cslinux1:~/week12Lab02} gcc -o Server3 Server3.c
+[1]+  Terminated              ./Server2 36510
+{cslinux1:~/week12Lab02} gcc -o Server3 Server3.c
+Case 1:
+ps
+  PID TTY          TIME CMD
+12134 pts/62   00:00:00 bash
+20978 pts/62   00:00:00 Server3
+21013 pts/62   00:00:00 ps
+{cslinux1:~/week12Lab02} netstat -aont | grep "36510"
+tcp        0      0 0.0.0.0:36510           0.0.0.0:*               LISTEN      off (0.00/0/0)
+
+
+Case 2:
+ps
+  PID TTY          TIME CMD
+12134 pts/62   00:00:00 bash
+23953 pts/62   00:00:00 Server3
+24176 pts/62   00:00:00 Server3
+24243 pts/62   00:00:00 ps
+{cslinux1:~/week12Lab02} netstat -aont | grep "36510"
+tcp        0      0 0.0.0.0:36510           0.0.0.0:*               LISTEN      off (0.00/0/0)
+
+
+Case 3:
+ps
+  PID TTY          TIME CMD
+12134 pts/62   00:00:00 bash
+30806 pts/62   00:00:00 Server3
+30844 pts/62   00:00:00 ps
+{cslinux1:~/week12Lab02} netstat -aont | grep "36510"
+tcp        0      0 0.0.0.0:36510           0.0.0.0:*               LISTEN      off (0.00/0/0)
+
+
+6. Test Cases.
+Case1. Run the server (with 10 seconds for alarm set)
+            and do not run the client for this case.
+           Being inactive [that is, there is no client connected to the server for 10 seconds], 
+           the server will be terminated with a message.
+{cslinux1:~/week12Lab02} ./Server3 36510 10 &
+[1] 19922
+{cslinux1:~/week12Lab02} ** The server uses port# 36510 to listen with 10 seconds for alarm **
+** The server will be terminated after 10 seconds of inactivity **
+Fri Nov 10 18:29:12 CST 2023
+cslinux1.utdallas.edu
+yfh200000
+  PID TTY          TIME CMD
+12134 pts/62   00:00:00 bash
+-rwx--x--x 1 yfh200000 sn 13216 Nov 10 17:37 Client3
+-rw------- 1 yfh200000 sn  2550 Nov 10 18:24 Client3.c
+-rwx--x--x 1 yfh200000 sn  9008 Nov 10 18:13 Server0
+-rw------- 1 yfh200000 sn  1095 Nov 10 18:12 Server0.c
+-rwx--x--x 1 yfh200000 sn  9008 Nov 10 18:16 Server1
+-rw------- 1 yfh200000 sn  1100 Nov 10 18:15 Server1.c
+-rwx--x--x 1 yfh200000 sn  9064 Nov 10 18:18 Server2
+-rw------- 1 yfh200000 sn  1185 Nov 10 18:18 Server2.c
+-rwx--x--x 1 yfh200000 sn 13568 Nov 10 18:25 Server3
+-rw------- 1 yfh200000 sn  2918 Nov 10 18:24 Server3.c
+{cslinux1:~/week12Lab02} ** The server will be terminated after 10 seconds of inactivity **
+
+
+[1]+  Done                    ./Server3 36510 10
+
+
+
+
+Case2. Run the server (with alarm set for 120 seconds)
+            Run the client foreground (to get the time-of-day)
+
+
+{cslinux1:~/week12Lab02} ./Server3 36510 120 &
+[2] 24176
+{cslinux1:~/week12Lab02} ** The server uses port# 36510 to listen with 120 seconds for alarm **
+** The server will be terminated after 120 seconds of inactivity **
+Fri Nov 10 18:33:01 CST 2023
+cslinux1.utdallas.edu
+yfh200000
+  PID TTY          TIME CMD
+12134 pts/62   00:00:00 bash
+23953 pts/62   00:00:00 Server3
+24176 pts/62   00:00:00 Server3
+24177 pts/62   00:00:00 sh
+24186 pts/62   00:00:00 ps
+total 768
+-rwx--x--x 1 yfh200000 sn  8848 Nov 10 18:13 Client0
+-rw------- 1 yfh200000 sn  1842 Nov 10 18:12 Client0.c
+-rwx--x--x 1 yfh200000 sn  8848 Nov 10 18:16 Client1
+-rw------- 1 yfh200000 sn  1839 Nov 10 18:16 Client1.c
+-rwx--x--x 1 yfh200000 sn 13184 Nov 10 18:19 Client2
+-rw------- 1 yfh200000 sn  2180 Nov 10 18:18 Client2.c
+-rwx--x--x 1 yfh200000 sn 13216 Nov 10 18:31 Client3
+-rw------- 1 yfh200000 sn  2550 Nov 10 18:24 Client3.c
+-rwx--x--x 1 yfh200000 sn  9008 Nov 10 18:13 Server0
+-rw------- 1 yfh200000 sn  1095 Nov 10 18:12 Server0.c
+-rwx--x--x 1 yfh200000 sn  9008 Nov 10 18:16 Server1
+-rw------- 1 yfh200000 sn  1100 Nov 10 18:15 Server1.c
+-rwx--x--x 1 yfh200000 sn  9064 Nov 10 18:18 Server2
+-rw------- 1 yfh200000 sn  1185 Nov 10 18:18 Server2.c
+-rwx--x--x 1 yfh200000 sn 13568 Nov 10 18:31 Server3
+-rw------- 1 yfh200000 sn  2918 Nov 10 18:24 Server3.c
+{cslinux1:~/week12Lab02} ./Client3 10.176.92.15 36510
+** The client is to connect to the server of IP# 10.176.92.15 and Port# 36510 **
+Fri Nov 10 18:33:51 CST 2023
+cslinux1.utdallas.edu
+yfh200000
+  PID TTY          TIME CMD
+12134 pts/62   00:00:00 bash
+23953 pts/62   00:00:00 Server3
+24176 pts/62   00:00:00 Server3
+25048 pts/62   00:00:00 Client3
+25049 pts/62   00:00:00 sh
+25053 pts/62   00:00:00 ps
+
+
+-rwx--x--x 1 yfh200000 sn  9008 Nov 10 18:13 Server0
+-rw------- 1 yfh200000 sn  1095 Nov 10 18:12 Server0.c
+-rwx--x--x 1 yfh200000 sn  9008 Nov 10 18:16 Server1
+-rw------- 1 yfh200000 sn  1100 Nov 10 18:15 Server1.c
+-rwx--x--x 1 yfh200000 sn  9064 Nov 10 18:18 Server2
+-rw------- 1 yfh200000 sn  1185 Nov 10 18:18 Server2.c
+-rwx--x--x 1 yfh200000 sn 13568 Nov 10 18:31 Server3
+-rw------- 1 yfh200000 sn  2918 Nov 10 18:24 Server3.c
+{cslinux1:~/week12Lab02} ** The server will be terminated after 120 seconds of inactivity **
+
+
+[2]+  Done                    ./Server3 36510 120
+
+
+Case3. Run the server (with alarm set for 30 seconds)
+          Run the client foreground (to get the time-of-day)
+          Wait 30 seconds to see whether the server will be timed out
+{cslinux1:~/week12Lab02} gcc -o Server3 Server3.c
+{cslinux1:~/week12Lab02} gcc -o Client3 Client3.c
+{cslinux1:~/week12Lab02} ./Server3 36510 30 &
+[1] 30806
+{cslinux1:~/week12Lab02} ** The server uses port# 36510 to listen with 30 seconds for alarm **
+** The server will be terminated after 30 seconds of inactivity **
+Fri Nov 10 18:39:26 CST 2023
+cslinux1.utdallas.edu
+yfh200000
+  PID TTY          TIME CMD
+{cslinux1:~/week12Lab02} ./Client3 10.176.92.15 36510
+** The client is to connect to the server of IP# 10.176.92.15 and Port# 36510 **
+Fri Nov 10 18:39:54 CST 2023
+cslinux1.utdallas.edu
+yfh200000
+  PID TTY          TIME CMD
+12134 pts/62   00:00:00 bash
+30806 pts/62   00:00:00 Server3
+31240 pts/62   00:00:00 Client3
+31241 pts/62   00:00:00 sh
+31245 pts/62   00:00:00 ps
+-rwx--x--x 1 yfh200000 sn  9008 Nov 10 18:13 Server0
+-rw------- 1 yfh200000 sn  1095 Nov 10 18:12 Server0.c
+-rwx--x--x 1 yfh200000 sn  9008 Nov 10 18:16 Server1
+-rw------- 1 yfh200000 sn  1100 Nov 10 18:15 Server1.c
+-rwx--x--x 1 yfh200000 sn  9064 Nov 10 18:18 Server2
+-rw------- 1 yfh200000 sn  1185 Nov 10 18:18 Server2.c
+-rwx--x--x 1 yfh200000 sn 13568 Nov 10 18:38 Server3
+-rw------- 1 yfh200000 sn  2918 Nov 10 18:24 Server3.c
+{cslinux1:~/week12Lab02} ** The server will be terminated after 30 seconds of inactivity **
+[1]+  Done                    ./Server3 36510 30
+Case4. After all is done, make sure that the server is terminated (or kill it).
+          Using ps command, check whether the server is still running.
+          If still running, kill the program using kill command.
+          Using netstat command, check the port of the server and the port of the client.
+{cslinux1:~/week12Lab02} ps
+  PID TTY          TIME CMD
+12134 pts/62   00:00:00 bash
+32984 pts/62   00:00:00 ps
+{cslinux1:~/week12Lab02} netstat -aont | grep "36510"
+End of Lab commands
+
+
+{cslinux1:~/week12Lab02} date
+Fri Nov 10 18:43:04 CST 2023
+{cslinux1:~/week12Lab02} ls -l
+total 768
+-rwx--x--x 1 yfh200000 sn  8848 Nov 10 18:13 Client0
+-rw------- 1 yfh200000 sn  1842 Nov 10 18:12 Client0.c
+-rwx--x--x 1 yfh200000 sn  8848 Nov 10 18:16 Client1
+-rw------- 1 yfh200000 sn  1839 Nov 10 18:16 Client1.c
+-rwx--x--x 1 yfh200000 sn 13184 Nov 10 18:19 Client2
+-rw------- 1 yfh200000 sn  2180 Nov 10 18:18 Client2.c
+-rwx--x--x 1 yfh200000 sn 13216 Nov 10 18:38 Client3
+-rw------- 1 yfh200000 sn  2550 Nov 10 18:24 Client3.c
+-rwx--x--x 1 yfh200000 sn  9008 Nov 10 18:13 Server0
+-rw------- 1 yfh200000 sn  1095 Nov 10 18:12 Server0.c
+-rwx--x--x 1 yfh200000 sn  9008 Nov 10 18:16 Server1
+-rw------- 1 yfh200000 sn  1100 Nov 10 18:15 Server1.c
+-rwx--x--x 1 yfh200000 sn  9064 Nov 10 18:18 Server2
+-rw------- 1 yfh200000 sn  1185 Nov 10 18:18 Server2.c
+-rwx--x--x 1 yfh200000 sn 13568 Nov 10 18:38 Server3
+-rw------- 1 yfh200000 sn  2918 Nov 10 18:24 Server3.c
+{cslinux1:~/week12Lab02} uname -a
+Linux cslinux1.utdallas.edu 3.10.0-1160.95.1.el7.x86_64 #1 SMP Mon Jul 24 13:59:37 UTC 2023 x86_64 x86_64 x86_64 GNU/Linux
+{cslinux1:~/week12Lab02} exit
+logout
